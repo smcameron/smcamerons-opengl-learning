@@ -1,0 +1,33 @@
+Libraries:
+	glfw: cross platform stuff
+	glee: open gl extension
+	opengl: 800 lb gorilla
+
+opengl pipline:
+	primitives:
+		points, lines, triangles, triangle strips,
+		triangle fans, quads, quadstrips, 
+
+	in games, you almost always use triangles.
+		tris -> p1, p2, p3, three points per tri
+		tristrips -> p1, p2, p3, 3 points for first
+			tri, one additional point per additional tri.
+		quads - 4 points per quad
+		quadstrips -
+		tri fan, 1 point defines initial point, additional
+		points define fan edge
+
+	old fixed pipeline:
+
+	primitives -> transform/clip/cull ->
+			rasterization  ->
+			lighting ->
+			fog??? ->
+			framebuffer
+
+
+	new programable pipeline:
+
+		primitives ->
+		vertex shader ->
+			
