@@ -8,8 +8,6 @@
 #include <string.h>
 #include <malloc.h>
 
-/* Chris's email: cre1@762studios.com */
-
 #include <GL/glfw.h>
 #include <GL/gl.h>
 
