@@ -65,7 +65,6 @@ GLuint create_shader_program(void)
 	vshaderhandle = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vshaderhandle, 1, (const GLchar **) &vprog, NULL);
 		/* handle, number of strings, program(s), NULL ); */
-	free(vprog);
 	glCompileShader(vshaderhandle);
 	glGetShaderiv(vshaderhandle, GL_COMPILE_STATUS, &result);
 	if (result == 0) {
@@ -74,13 +73,15 @@ GLuint create_shader_program(void)
 		glGetShaderInfoLog(vshaderhandle, length, NULL, logbuff);
 		printf("Unable to compile vertex shader:\n%s\n", logbuff);
 		free(logbuff);
+		printf("vertex shader: '%s'\n", vprog);
 		glDeleteShader(vshaderhandle);
+		free(vprog);
 		return 0;
 	}
+	free(vprog);
 
 	fshaderhandle = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fshaderhandle, 1, (const GLchar **) &fprog, NULL);
-	free(fprog);
 	glCompileShader(fshaderhandle);
 	glGetShaderiv(fshaderhandle, GL_COMPILE_STATUS, &result);
 	if (result == 0) {
@@ -90,10 +91,13 @@ GLuint create_shader_program(void)
 		printf("Unable to compile fragment shader:\n%s\n",
 			logbuff);
 		free(logbuff);
+		printf("fragment shader: '%s'\n", fprog);
 		glDeleteShader(vshaderhandle);
 		glDeleteShader(fshaderhandle);
+		free(fprog);
 		return 0;
 	}
+	free(fprog);
 
 	proghandle = glCreateProgram();
 	glAttachShader(proghandle, vshaderhandle);
@@ -113,6 +117,45 @@ GLuint create_shader_program(void)
 		return 0;
 	}
 	return proghandle;
+}
+
+int create_geometry(GLuint *vbo, GLuint *ibo)
+{
+	GLuint buffname;
+
+	/* two triangles... */
+	const GLfloat geom[] = {
+				-0.5f, -0.5f,
+				0.5f, -0.5f,
+				-0.5f, 0.5f,
+
+				0.5f, -0.5f,
+				-0.5f, 0.5f,
+				0.5f, 0.5f};
+
+	const GLshort inds[] = { 0, 1, 2, 3, 4, 5 };
+
+	glGenBuffers(1, &buffname);
+	glBindBuffer(GL_ARRAY_BUFFER< buffname);
+	glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(GLfloat), geom,
+			GL_STATIC_DRAW);
+	*vbo = buffname;
+
+	glGenBuffers(1, &buffname);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffname);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLshort), inds, GL_STATIC_DRAW);
+	*ibo = buffname;
+
+	return 1;BufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(GLfloat), geom,
+			GL_STATIC_DRAW);
+	*vbo = buffname;
+
+	glGenBuffers(1, &buffname);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffname);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLshort), inds, GL_STATIC_DRAW);
+	*ibo = buffname;
+
+	return 1;
 }
 
 int main(int argc, char *argv[])
