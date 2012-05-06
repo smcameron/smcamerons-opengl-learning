@@ -11,6 +11,7 @@
 /* Chris's email: cre1@762studios.com */
 
 #include <GL/glfw.h>
+#include <GL/gl.h>
 
 char *read_file(char *f)
 {
@@ -42,12 +43,82 @@ char *read_file(char *f)
 	return buffer;
 }
 
+GLuint create_shader_program(void)
+{
+	GLuint proghandle;
+	GLuint vshaderhandle;
+	GLuint fshaderhandle;
+	GLint length, result;
+	char *vprog, *fprog, *logbuff;
+
+	vprog = read_file("basic.v.glsl");
+	printf("vprog = '%s'\n", vprog);
+	fprog = read_file("basic.f.glsl");
+
+	if (!vprog || !fprog) {
+		fprintf(stderr, "Failed to read shader programs\n");
+		free(vprog);
+		free(fprog);
+		return 0;
+	}
+
+	vshaderhandle = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vshaderhandle, 1, (const GLchar **) &vprog, NULL);
+		/* handle, number of strings, program(s), NULL ); */
+	free(vprog);
+	glCompileShader(vshaderhandle);
+	glGetShaderiv(vshaderhandle, GL_COMPILE_STATUS, &result);
+	if (result == 0) {
+		glGetShaderiv(vshaderhandle, GL_INFO_LOG_LENGTH, &length);
+		logbuff = calloc(length + 1, sizeof(char));
+		glGetShaderInfoLog(vshaderhandle, length, NULL, logbuff);
+		printf("Unable to compile vertex shader:\n%s\n", logbuff);
+		free(logbuff);
+		glDeleteShader(vshaderhandle);
+		return 0;
+	}
+
+	fshaderhandle = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fshaderhandle, 1, (const GLchar **) &fprog, NULL);
+	free(fprog);
+	glCompileShader(fshaderhandle);
+	glGetShaderiv(fshaderhandle, GL_COMPILE_STATUS, &result);
+	if (result == 0) {
+		glGetShaderiv(fshaderhandle, GL_INFO_LOG_LENGTH, &length);
+		logbuff = calloc(length + 1, 1);
+		glGetShaderInfoLog(fshaderhandle, length, NULL, logbuff);
+		printf("Unable to compile fragment shader:\n%s\n",
+			logbuff);
+		free(logbuff);
+		glDeleteShader(vshaderhandle);
+		glDeleteShader(fshaderhandle);
+		return 0;
+	}
+
+	proghandle = glCreateProgram();
+	glAttachShader(proghandle, vshaderhandle);
+	glAttachShader(proghandle, fshaderhandle);
+	glLinkProgram(proghandle);
+	glGetProgramiv(proghandle, GL_LINK_STATUS, &result);
+	if (result == 0) {
+		glGetProgramiv(proghandle, GL_INFO_LOG_LENGTH, &length);
+		logbuff = calloc(length + 1, 1);
+		glGetProgramInfoLog(proghandle, length, NULL, logbuff);
+		printf("Unable to link shader program:\n%s\n",
+			logbuff);
+		free(logbuff);
+		glDeleteShader(vshaderhandle);
+		glDeleteShader(fshaderhandle);
+		glDeleteProgram(proghandle);
+		return 0;
+	}
+	return proghandle;
+}
+
 int main(int argc, char *argv[])
 {
 	double currtime, firsttime, lasttime, dt, dtms, sleeptime;
 	uint32_t frames = 0;
-	char *vertex_shader_source;
-	char *fragment_shader_source;
 
 	printf("hello\n");
 
@@ -65,12 +136,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	vertex_shader_source = read_file("basic.v.glsl");
-	fragment_shader_source = read_file("basic.f.glsl");
-
 	glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
 	firsttime = glfwGetTime();
 	lasttime = firsttime;
+
+	create_shader_program();
 
 	while (1) {
 		currtime = glfwGetTime();
@@ -92,11 +162,6 @@ int main(int argc, char *argv[])
 	printf("dt = %g, frames = %u, elapsed time = %g, f/s = %g\n", dt,
 		frames, lasttime - firsttime,
 			(double) frames / (lasttime - firsttime));
-
-	printf("vertex shader source = %s\n", 
-		vertex_shader_source);
-	printf("fragment shader source = %s\n", 
-		fragment_shader_source);
 
 	glfwCloseWindow();
 	glfwTerminate();
