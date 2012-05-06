@@ -52,7 +52,6 @@ GLuint create_shader_program(void)
 	char *vprog, *fprog, *logbuff;
 
 	vprog = read_file("basic.v.glsl");
-	printf("vprog = '%s'\n", vprog);
 	fprog = read_file("basic.f.glsl");
 
 	if (!vprog || !fprog) {
@@ -162,6 +161,7 @@ int main(int argc, char *argv[])
 {
 	double currtime, firsttime, lasttime, dt, dtms, sleeptime;
 	uint32_t frames = 0;
+	GLuint vbo, ibo, prog, posloc, dtloc;
 
 	printf("hello\n");
 
@@ -183,7 +183,18 @@ int main(int argc, char *argv[])
 	firsttime = glfwGetTime();
 	lasttime = firsttime;
 
-	create_shader_program();
+	if (create_geometry(&vbo, &ibo) == 0) {
+		printf("Unable to create geometry buffers\n");
+		return 1;
+	}
+	prog = create_shader_program();
+	if (prog == 0) {
+		printf("Unable to create shader program\n");
+		return 1;
+	}
+
+	posloc = glGetAttribLocation(prog, "postion");
+	dtloc = glGetUniformLocation(prog, "dt");
 
 	while (1) {
 		currtime = glfwGetTime();
@@ -194,16 +205,32 @@ int main(int argc, char *argv[])
 		if (sleeptime > 0.0)
 			usleep((useconds_t) (sleeptime * 1000.0));
 		
-		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		/* setup draw state */
+		glUseProgram(prog);
+		glUniform1f(dtloc, lasttime);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glVertexAttribPointer(posloc, 2,
+				GL_FLOAT, GL_FALSE,
+				2 * sizeof(GLfloat), 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
+		/* draw */
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+	
+		/* cleanup */
+		glDisableVertexAttribArray(posloc);	
+
+		/* swap out to display */
 		glfwSwapBuffers();
 		if (!glfwGetWindowParam(GLFW_OPENED))
 			break;
 		frames++;
 	}
 
-	printf("dt = %g, frames = %u, elapsed time = %g, f/s = %g\n", dt,
-		frames, lasttime - firsttime,
+	printf("dt = %g, frames = %u, elapsed time = %g, f/s = %g\n",
+		dt, frames, lasttime - firsttime,
 			(double) frames / (lasttime - firsttime));
 
 	glfwCloseWindow();
