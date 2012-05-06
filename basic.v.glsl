@@ -1,6 +1,7 @@
-#version 140
+// #version 140
 
-in vec2 position
+// in vec2 position
+varying vec2 position;
 
 void main()
 {
