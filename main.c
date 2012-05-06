@@ -1,15 +1,53 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
+#include <malloc.h>
 
-/* cre1@762studios.com */
+/* Chris's email: cre1@762studios.com */
 
 #include <GL/glfw.h>
+
+char *read_file(char *f)
+{
+	int fd, rc;
+	struct stat statbuf;
+	char *buffer;
+
+	fd = open(f, O_RDONLY);
+	if (fd < 0) {
+		fprintf(stderr, "open: %s\n", strerror(errno));
+		return NULL;
+	}
+	rc = fstat(fd, &statbuf);
+	if (rc < 0) {
+		fprintf(stderr, "fstat: %s\n", strerror(errno));
+		return NULL;
+	}
+
+	buffer = malloc(statbuf.st_size + 1);
+	buffer[statbuf.st_size] = '\0';
+
+	rc = read(fd, buffer, statbuf.st_size);
+	close(fd);
+	if (rc != statbuf.st_size) {
+		fprintf(stderr, "Failed to read file\n"); 
+		free(buffer);
+		return NULL;
+	}
+	return buffer;
+}
 
 int main(int argc, char *argv[])
 {
 	double currtime, firsttime, lasttime, dt, dtms, sleeptime;
 	uint32_t frames = 0;
+	char *vertex_shader_source;
+	char *fragment_shader_source;
 
 	printf("hello\n");
 
@@ -26,6 +64,9 @@ int main(int argc, char *argv[])
 		printf("Can't create window\n");
 		return 1;
 	}
+
+	vertex_shader_source = read_file("basic.v.glsl");
+	fragment_shader_source = read_file("basic.f.glsl");
 
 	glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
 	firsttime = glfwGetTime();
@@ -51,6 +92,11 @@ int main(int argc, char *argv[])
 	printf("dt = %g, frames = %u, elapsed time = %g, f/s = %g\n", dt,
 		frames, lasttime - firsttime,
 			(double) frames / (lasttime - firsttime));
+
+	printf("vertex shader source = %s\n", 
+		vertex_shader_source);
+	printf("fragment shader source = %s\n", 
+		fragment_shader_source);
 
 	glfwCloseWindow();
 	glfwTerminate();
