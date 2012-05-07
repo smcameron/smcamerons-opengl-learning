@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	posloc = glGetAttribLocation(prog, "postion");
+	posloc = glGetAttribLocation(prog, "position");
 	dtloc = glGetUniformLocation(prog, "dt");
 
 	while (1) {
@@ -212,6 +212,7 @@ int main(int argc, char *argv[])
 		glVertexAttribPointer(posloc, 2,
 				GL_FLOAT, GL_FALSE,
 				2 * sizeof(GLfloat), 0);
+		glEnableVertexAttribArray(posloc);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
 		/* draw */
